@@ -1,6 +1,5 @@
 import allel
 import numpy as np
-import pandas as pd
 from warnings import filterwarnings
 import sys
 import argparse
@@ -40,7 +39,7 @@ def main():
     required.add_argument('-v', '--vcf', type=str, help='VCF file', required=True)
     required.add_argument('-b', '--multicallable_bed', type=str, help='Multicallable bed array (can be gzip compressed)', required=True)
     required.add_argument('-p', '--populations', type=str, help='Populations file.\nCsv file with id and population in each row: [id,pop]', required=True)
-    required.add_argument('-o', '--output', type=str, help='Output name. (.tsv)', required=True)
+    required.add_argument('-o', '--output', type=str, help='Output name prefix', required=True)
 
     # optional
     #parser.add_argument('-s', '--statistics', type=str, help='pi, dxy, tajD', required=True)
@@ -70,18 +69,18 @@ def main():
     if os.path.exists(args.populations) is not True:
         raise Exception(f"[YAWP] ERROR: The specified populations file {args.populations} does not exist")
     
-    pop_df = pd.read_csv(args.populations, names=["id", "pop"])
+    pop_array = np.genfromtxt(args.populations, delimiter=',', dtype=str)
+    
     vcf_header = allel.read_vcf_headers(args.vcf)
 
-    if not np.all(np.isin(pop_df.id, vcf_header.samples)):
-        raise Exception(f"[YAWP] ERROR: The following sample in the population file could not be found in the VCF:\n{', '.join(pop_df.id[~np.isin(pop_df.id, vcf_header.samples)])}")
-
-    pops = {}
-    unique_pops = np.unique(pop_df["pop"]).astype(str)
-    for pop in unique_pops:
-        ids = pop_df[pop_df['pop'] == pop]['id']
-        pops[pop] = np.where(np.isin(vcf_header.samples, ids))[0]
+    if not np.all(np.isin(pop_array[:, 0], vcf_header.samples)):
+        raise Exception(f"[YAYAWP] ERROR: The following sample in the population file could not be found in the VCF:\n{', '.join(pop_array[:, 0][~np.isin(pop_array[:, 0], vcf_header.samples)])}")
         
+    pops = {}
+    for pop in np.unique(pop_array[:, 1]):
+        ids = pop_array[pop_array[:, 1] == pop][:, 0]
+        pops[pop] = np.where(np.isin(vcf_header.samples, ids))[0]
+
     if args.mask is not None:
 
         if args.window_size is not None:
