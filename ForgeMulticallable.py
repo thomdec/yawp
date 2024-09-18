@@ -44,7 +44,7 @@ def main():
         run_command(f"bedtools multiinter -i {' '.join(ordered_beds)} -names {' '.join(sample_ids)} | cut -f 1-3,6- | bgzip > {tmp_multiinter_bed}")
 
         # creates a bed file with failed sites in the VCF
-        run_command(f"""bcftools view {args.vcf} -i "%FILTER!='PASS'" | bcftools query -f '%CHROM\t%POS0\t%END\t%FILTER\n' | bgzip > {tmp_fail_bed}""")
+        run_command(f"""bcftools view {vcf} -i "%FILTER!='PASS'" | bcftools query -f '%CHROM\t%POS0\t%END\t%FILTER\n' | bgzip > {tmp_fail_bed}""")
 
         # remove VCF failed sites from the multi callable array
         run_command(f"""bedtools subtract -a {tmp_multiinter_bed} -b {tmp_fail_bed} | bgzip > {args.output}""")
